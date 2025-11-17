@@ -4,6 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Link, Bank, Product
 from .serializers import LinkSerializer, BankSerializer, ProductSerializer
 from .permissions import IsAdminOrReadOnly
+from django.db import IntegrityError, transaction
+from rest_framework import status
+from rest_framework.response import Response
 
 # --- New ViewSets for Bank and Product Management ---
 
@@ -27,12 +30,22 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 # --- LinkViewSet remains the same ---
 class LinkViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint that allows links to be viewed, created, edited, or deleted.
-    """
     queryset = Link.objects.all().order_by('bank__name', 'product__name')
     serializer_class = LinkSerializer
     permission_classes = [IsAuthenticated, IsAdminOrReadOnly]
-    
     def get_serializer_context(self):
         return {'request': self.request}
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            with transaction.atomic():
+                self.perform_create(serializer)
+        except IntegrityError:
+            return Response(
+                {"detail": "A Link for this bank and product already exists."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

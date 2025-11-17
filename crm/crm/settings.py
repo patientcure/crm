@@ -25,8 +25,9 @@ SECRET_KEY = 'django-insecure-jrk*bbpi@6@c*k@k0r(q0i2t@gh-r__hwwt@+2w665#uft!jl5
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+CORS_ORIGIN_ALLOW_ALL = True
+ALLOWED_HOSTS = ['*']
 
-ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -41,10 +42,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'links',
     'users',
-    'customers'
+    'customers',
+    'drf_spectacular',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -78,14 +82,23 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'CRM Portal API',
+    'DESCRIPTION': 'Backend documentation for the CRM Portal, supporting Admin, Staff, and Connector roles.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False, # Schema will be served by a separate endpoint
+    # Schema location to allow for easy client configuration
+    'SCHEMA_PATH_PREFIX': '/api/', 
 }
 
 # --- Simple JWT Configuration ---
 AUTH_USER_MODEL = 'users.User'
 SIMPLE_JWT = {
     # JWT tokens will expire after 5 minutes
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=300),
     # Refresh tokens last for 1 day
     "REFRESH_TOKEN_LIFETIME": timedelta(days=30),
     "ROTATE_REFRESH_TOKENS": True,

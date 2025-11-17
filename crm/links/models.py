@@ -52,9 +52,10 @@ class Link(models.Model):
     )
 
     class Meta:
-        # Ensures that a specific Bank/Product combination link can be easily managed/identified
-        unique_together = ('bank', 'product')
-        
+        constraints = [
+            models.UniqueConstraint(fields=['bank', 'product'], name='unique_bank_product')
+        ] 
+
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         super().save(*args, **kwargs)
@@ -63,13 +64,3 @@ class Link(models.Model):
             # To avoid recursion, we re-save only if the internal URL changes
             Link.objects.filter(id=self.id).update(internal_customer_onboarding_url=self.internal_customer_onboarding_url)
 
-
-    def get_connector_unique_link(self, connector_user):
-        """
-        Generates the unique Customer-Link for a specific connector.
-        """
-        base_url = reverse('customer_onboarding_track', kwargs={'link_id': self.id})
-        return f"http://yourdomain.com{base_url}?ref={connector_user.id}"
-
-    def __str__(self):
-        return f"{self.bank.name} - {self.product.name}"

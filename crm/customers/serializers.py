@@ -10,11 +10,11 @@ class CustomerOnboardingSerializer(serializers.ModelSerializer):
         model = Customer
         fields = ('name', 'phone', 'email', 'pan')
         
-    def create(self, validated_data):
-        # We need to get referrer info from the view/request, not the POST body
-        validated_data.pop('referred_by', None)
-        validated_data.pop('referred_for_product', None)
-        return super().create(validated_data)
+    # def create(self, validated_data):
+    #     # We need to get referrer info from the view/request, not the POST body
+    #     validated_data.pop('referred_by', None)
+    #     validated_data.pop('referred_for_product', None)
+    #     return super().create(validated_data)
 
 
 class CustomerAdminSerializer(CustomerOnboardingSerializer):

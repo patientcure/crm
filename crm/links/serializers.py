@@ -1,6 +1,7 @@
 # links/serializers.py (UPDATED)
 from rest_framework import serializers
 from .models import Link, Bank, Product
+from django.urls import reverse
 # ... (User import is not needed here) ...
 
 # --- New Serializers ---
@@ -41,10 +42,51 @@ class LinkSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'unique_customer_link', 'bank_name', 'product_name')
         
+
     def get_unique_customer_link(self, obj):
-        # ... (Logic remains the same, assuming we pass the request in context) ...
-        request = self.context.get('request')
+            request = self.context.get('request')
+            if not request or not request.user.is_authenticated:
+                return None
+
+            user = request.user
+            # 2. GET THE USER'S ROLE, default to empty string if not present
+            user_role = getattr(user, 'role', '').upper()
+
+            # 3. USE YOUR SUGGESTED LOGIC
+            if user_role in ('CONNECTOR', 'STAFF', 'ADMIN'):
+                
+                # 4. IMPLEMENT "OPTION 2" to build the URL
+                try:
+                    # This 'name' MUST match the one in urls.py (Step 2)
+                    path = reverse('customer_onboarding_track', kwargs={'link_id': obj.id, 'connector_id': user.id})
+                    return request.build_absolute_uri(path)
+                except Exception as e:
+                    # This helps you debug if the URL name is missing or wrong
+                    return f"Error: URL 'customer_onboarding_track' not configured. {e}"
+
+            # Returns None if the user role is not one of the above
+            return None
         
-        if request and request.user.is_authenticated and request.user.is_connector_or_staff:
-            return obj.get_connector_unique_link(request.user)
-        return None
+    def validate(self, data):
+        """
+        Ensure bank+product pair is unique.
+        When updating, allow the same instance to keep its bank/product.
+        """
+        request = self.context.get('request', None)
+        bank = data.get('bank', getattr(self.instance, 'bank', None))
+        product = data.get('product', getattr(self.instance, 'product', None))
+
+        if not bank or not product:
+            # Let field-level validation handle missing FKs
+            return data
+
+        qs = Link.objects.filter(bank=bank, product=product)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.exists():
+            raise serializers.ValidationError({
+                'non_field_errors': ["A Link for this bank and product already exists. "
+                                     "Modify or delete that one instead of creating a new one."]
+            })
+        return data

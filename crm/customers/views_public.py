@@ -11,25 +11,65 @@ from .serializers import CustomerOnboardingSerializer
 class CustomerOnboardingAPIView(APIView):
     """
     Public endpoint for customer data submission and tracking redirect.
-    URL: /onboard/<link_id>/
-    Query Params: ?ref=<user_id> (Only present on the initial tracked click)
+    URL: /onboard/<link_id>/<connector_id>/
     """
     permission_classes = () # Public access
 
-    def post(self, request, link_id, format=None):
+    def get(self, request, link_id, connector_id, format=None):
+        """
+        Handles GET: Return details about the link and the connector.
+        """
+        link = get_object_or_404(Link, pk=link_id)
+        
+        try:
+            connector = User.objects.get(id=connector_id)
+            if connector.role not in ('ADMIN', 'STAFF', 'CONNECTOR'):
+                 return Response(
+                    {"detail": "The specified connector is not valid."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except User.DoesNotExist:
+             return Response(
+                {"detail": "The specified connector is not valid."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Return the details
+        return Response({
+            "link_details": {
+                "id": link.id,
+                "bank_name": link.bank.name,
+                "product_name": link.product.name,
+                "utm_link": link.utm_link
+            },
+            "user_details": {
+                "id": connector.id,
+                "name": connector.get_full_name() or connector.username,
+                "role": connector.role
+            }
+        })
+
+    def post(self, request, link_id, connector_id, format=None):
+        """
+        Handles POST: Creates a new customer record.
+        """
         serializer = CustomerOnboardingSerializer(data=request.data)
         
         if serializer.is_valid():
             # 1. Identify the referring user and product
-            referrer_id = request.query_params.get('ref')
-            
-            referrer_user = None
-            if referrer_id:
-                try:
-                    referrer_user = User.objects.get(id=referrer_id)
-                except User.DoesNotExist:
-                    # Log error, but proceed with un-referred customer
-                    pass
+            # The ID now comes from the URL, not query_params
+            try:
+                referrer_user = User.objects.get(id=connector_id)
+                if referrer_user.role not in ('STAFF', 'CONNECTOR'):
+                    return Response(
+                        {"detail": "Invalid connector."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": "Invalid connector."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
             
             link = get_object_or_404(Link, id=link_id)
 
