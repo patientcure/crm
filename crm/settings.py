@@ -38,7 +38,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "https://*.devtunnels.ms",
     "http://69.62.80.202",
-    "https://crm.svsmultyservices.in"
+    "https://svsmultyservices.in"
 ]
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost,"http://69.62.80.202').split(',')
