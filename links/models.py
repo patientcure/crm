@@ -1,7 +1,4 @@
-# links/models.py (UPDATED)
 from django.db import models
-from django.urls import reverse
-from users.models import User
 
 class Bank(models.Model):
     """Represents a financial institution."""
@@ -41,7 +38,7 @@ class Link(models.Model):
     # Optional fields for credentials
     user_id = models.CharField(max_length=100, blank=True, null=True, help_text="Optional bank portal User ID")
     password = models.CharField(max_length=100, blank=True, null=True, help_text="Optional bank portal Password")
-    
+    description = models.TextField(blank=True, null=True, help_text="Optional description of the link/campaign")
     image = models.ImageField(upload_to='link_images/', blank=True, null=True, help_text="Product image/logo")
 
     # This is a fixed internal link for customer onboarding (used for tracking)
@@ -55,12 +52,3 @@ class Link(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['bank', 'product'], name='unique_bank_product')
         ] 
-
-    def save(self, *args, **kwargs):
-        is_new = self._state.adding
-        super().save(*args, **kwargs)
-        if is_new or not self.internal_customer_onboarding_url:
-            self.internal_customer_onboarding_url = reverse('customer_onboarding_base', kwargs={'link_id': self.id})
-            # To avoid recursion, we re-save only if the internal URL changes
-            Link.objects.filter(id=self.id).update(internal_customer_onboarding_url=self.internal_customer_onboarding_url)
-

@@ -37,6 +37,7 @@ class LinkSerializer(serializers.ModelSerializer):
             'user_id', 
             'password', 
             'utm_link', 
+            'description',
             'image',
             'unique_customer_link',
         )

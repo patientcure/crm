@@ -1,7 +1,7 @@
 # users/urls.py
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
-from .views import UserRegistrationAPIView, UserProfileAPIView
+from .views import UserRegistrationAPIView, UserProfileAPIView, UserListAPIView, UserDetailAPIView,TermsAndConditionsAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
 
@@ -16,4 +16,8 @@ urlpatterns = [
     
     # Profile - Any authenticated user can access
     path('auth/profile/', UserProfileAPIView.as_view(), name='profile'),
+    # User List Management Create Update Delete Modify - Only admins can access 
+    path("users/", UserListAPIView.as_view(), name="user-list"),
+    path("user/<int:pk>/", UserDetailAPIView.as_view(), name="user-detail"),
+    path("terms/",TermsAndConditionsAPIView.as_view(), name="terms")
 ]
