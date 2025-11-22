@@ -1,10 +1,12 @@
 # users/urls.py
-from django.urls import path
+from django.urls import path,include
 from rest_framework_simplejwt.views import TokenRefreshView, TokenBlacklistView
-from .views import UserRegistrationAPIView, UserProfileAPIView, UserListAPIView, UserDetailAPIView,TermsAndConditionsAPIView, HomePageAPIView
+from .views import UserRegistrationAPIView, UserProfileAPIView, UserListAPIView, UserDetailAPIView,TermsAndConditionsAPIView, HomePageStatsAPIView, HomePageSliderViewSet
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
-
+from rest_framework.routers import DefaultRouter
+router = DefaultRouter()
+router.register(r'homepage-sliders', HomePageSliderViewSet, basename='homepage-slider')
 urlpatterns = [
     # Authentication - Login with phone/password
     path('auth/login/', TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer), name='login'),
@@ -20,5 +22,6 @@ urlpatterns = [
     path("users/", UserListAPIView.as_view(), name="user-list"),
     path("user/<int:pk>/", UserDetailAPIView.as_view(), name="user-detail"),
     path("terms/",TermsAndConditionsAPIView.as_view(), name="terms"),
-    path("homepage/", HomePageAPIView.as_view(), name="homepage"),
+    path("homepage/", HomePageStatsAPIView.as_view(), name="homepage"),
+    path('', include(router.urls)),
 ]

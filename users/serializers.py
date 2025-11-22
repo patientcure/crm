@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
-from .models import User, TermsAndConditions, HomePage
+from .models import User, TermsAndConditions, HomePageSlider
 from customers.models import Customer
 from links.models import Product  # new import
 
@@ -148,30 +148,15 @@ class TermsAndConditionsSerializer(serializers.ModelSerializer):
         fields = ('content', 'updated_at', 'updated_by')
 
 # New serializer for single HomePage model (no stats field)
-class HomePageSerializer(serializers.ModelSerializer):
-    slider_images = serializers.ListField(child=serializers.DictField(), required=False)
-    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
-
+class HomePageSliderSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
     class Meta:
-        model = HomePage
-        fields = ('id', 'slider_images', 'updated_at', 'updated_by')
-        read_only_fields = ('id', 'updated_at', 'updated_by')
+        model = HomePageSlider
+        fields = ('id', 'image', 'image_url', 'caption', 'order', 'is_active', 'updated_at')
+        read_only_fields = ('updated_at',)
 
-    def create(self, validated_data):
+    def get_image_url(self, obj):
         request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        homepage = HomePage.objects.create(**validated_data, updated_by=user)
-        return homepage
-
-    def update(self, instance, validated_data):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        slider_images = validated_data.pop('slider_images', None)
-
-        instance = super().update(instance, validated_data)
-        if slider_images is not None:
-            instance.slider_images = slider_images
-        if user:
-            instance.updated_by = user
-        instance.save()
-        return instance
+        if obj.image:
+            return request.build_absolute_uri(obj.image.url)
+        return None
