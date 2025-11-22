@@ -1,7 +1,7 @@
 # users/admin.py
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User
+from .models import User,HomePageSlider, TermsAndConditions  
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -28,3 +28,15 @@ class UserAdmin(BaseUserAdmin):
     
     # Order by phone by default
     ordering = ('phone',)
+
+@admin.register(HomePageSlider)
+class HomePageSliderAdmin(admin.ModelAdmin):
+    list_display = ('id', 'caption', 'order', 'is_active', 'created_at', 'updated_at')
+    list_filter = ('is_active',)
+    search_fields = ('caption',)
+    ordering = ('order',)   
+@admin.register(TermsAndConditions)
+class TermsAndConditionsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'updated_at', 'updated_by')
+    search_fields = ('content', 'updated_by__phone', 'updated_by__first_name', 'updated_by__last_name')
+    ordering = ('-updated_at',)
