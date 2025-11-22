@@ -25,6 +25,7 @@ class CustomerOnboardingAPIView(APIView):
         context_data = {
             "product_name": link.product.name,
             "bank_name": link.bank.name,
+            "bank_logo_url": link.bank.logo.url if link.bank.logo else "",
             "connector_name": connector.get_full_name() or connector.username,
             "post_url": f"/onboard/customer/{link_id}/{connector_id}/",
             "redirect_url": link.utm_link

@@ -149,10 +149,9 @@ class TermsAndConditionsSerializer(serializers.ModelSerializer):
 
 # New serializer for single HomePage model (no stats field)
 class HomePageSliderSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
     class Meta:
         model = HomePageSlider
-        fields = ('id', 'image', 'image_url', 'caption', 'order', 'is_active', 'updated_at')
+        fields = ('id', 'image',  'caption', 'order', 'is_active', 'updated_at')
         read_only_fields = ('updated_at',)
 
     def get_image_url(self, obj):
