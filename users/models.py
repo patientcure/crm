@@ -50,3 +50,17 @@ class TermsAndConditions(models.Model):
     )
     def __str__(self):
         return f"Terms and Conditions (Last updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')})"
+
+# New single model to hold homepage slider images (no stats in model)
+class HomePage(models.Model):
+    """
+    Single model storing homepage slider images.
+    - slider_images: JSON list of objects { "image": "<media_path_or_url>", "caption": "...", "order": 0, "is_active": true }
+    Admins can update this record (replace slider_images). Image files are saved to MEDIA/homepage_sliders/ by the view.
+    """
+    slider_images = models.JSONField(default=list, blank=True, help_text="List of slider image objects (image, caption, order, is_active).")
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    def __str__(self):
+        return f"HomePage (updated: {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')})"

@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
-from .models import User, TermsAndConditions
+from .models import User, TermsAndConditions, HomePage
 from customers.models import Customer
 from links.models import Product  # new import
 
@@ -146,3 +146,32 @@ class TermsAndConditionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = TermsAndConditions
         fields = ('content', 'updated_at', 'updated_by')
+
+# New serializer for single HomePage model (no stats field)
+class HomePageSerializer(serializers.ModelSerializer):
+    slider_images = serializers.ListField(child=serializers.DictField(), required=False)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = HomePage
+        fields = ('id', 'slider_images', 'updated_at', 'updated_by')
+        read_only_fields = ('id', 'updated_at', 'updated_by')
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        homepage = HomePage.objects.create(**validated_data, updated_by=user)
+        return homepage
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        slider_images = validated_data.pop('slider_images', None)
+
+        instance = super().update(instance, validated_data)
+        if slider_images is not None:
+            instance.slider_images = slider_images
+        if user:
+            instance.updated_by = user
+        instance.save()
+        return instance
