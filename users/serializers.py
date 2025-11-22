@@ -14,26 +14,39 @@ class ProductAccessSerializer(serializers.Serializer):
 
 class UserSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    product_access = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Product.objects.all(), required=False
+    )
 
     class Meta:
         model = User
         fields = (
-            'id', 'phone', 'username', 'email', 'first_name', 'last_name', 
-            'role', 'is_active', 'is_staff', 'last_login', 'created_at', 'products'
+            'id', 'phone', 'username', 'email', 'first_name', 'last_name',
+            'role', 'is_active', 'is_staff', 'last_login', 'created_at',
+            'products', 'product_access'
         )
         read_only_fields = ('id', 'is_active', 'is_staff', 'last_login', 'created_at')
 
     def get_products(self, obj):
         all_products = Product.objects.all()
-        user_products = set(obj.products.all().values_list('id', flat=True))
+        user_product_ids = set(obj.products.all().values_list('id', flat=True))
         result = []
         for p in all_products:
+            name = getattr(p, 'name', None) or str(p)
             result.append({
                 'id': p.id,
-                'name': getattr(p, 'name', '') if hasattr(p, 'name') else str(p),
-                'has_access': p.id in user_products
+                'name': name,
+                'has_access': p.id in user_product_ids
             })
         return ProductAccessSerializer(result, many=True).data
+
+    def update(self, instance, validated_data):
+        products_data = validated_data.pop('product_access', None)
+        instance = super().update(instance, validated_data)
+        if products_data is not None:
+            instance.products.set(products_data)
+
+        return instance
 
 # --- 2. New Serializer for the Customer List (Nested) ---
 class CustomerReferralSerializer(serializers.ModelSerializer):
